@@ -1,5 +1,7 @@
 const express = require("express");
 const cors = require("cors");
+const cheerio = require("cheerio");
+const yahooFinance = require("yahoo-finance2").default;
 
 const app = express();
 const PORT = process.env.PORT || 10000;
@@ -7,22 +9,32 @@ const PORT = process.env.PORT || 10000;
 app.use(cors());
 app.use(express.static(__dirname));
 
+function normalizeCode(code) {
+  return String(code || "").trim().toUpperCase();
+}
+
 function toNum(v) {
   if (v === null || v === undefined || v === "" || v === "-") return NaN;
   const n = Number(String(v).replace(/,/g, "").trim());
   return Number.isNaN(n) ? NaN : n;
 }
 
-function fmt2(v) {
+function fmtNum(v, digits = 2) {
   const n = toNum(v);
   if (Number.isNaN(n)) return "--";
-  return n > 0 ? `+${n.toFixed(2)}` : n.toFixed(2);
+  return n.toFixed(digits);
 }
 
-function fmtPct(v) {
+function fmtSigned(v, digits = 2) {
   const n = toNum(v);
   if (Number.isNaN(n)) return "--";
-  return n > 0 ? `+${n.toFixed(2)}%` : `${n.toFixed(2)}%`;
+  return n > 0 ? `+${n.toFixed(digits)}` : n.toFixed(digits);
+}
+
+function fmtPct(v, digits = 2) {
+  const n = toNum(v);
+  if (Number.isNaN(n)) return "--";
+  return n > 0 ? `+${n.toFixed(digits)}%` : `${n.toFixed(digits)}%`;
 }
 
 function calcChange(price, prevClose) {
@@ -32,22 +44,36 @@ function calcChange(price, prevClose) {
     return { diff: "--", pct: "--" };
   }
   const diff = p - y;
-  const pct = diff / y * 100;
-  return { diff: fmt2(diff), pct: fmtPct(pct) };
-}
-
-function normalizeCode(code) {
-  return String(code || "").trim().toUpperCase();
+  const pct = (diff / y) * 100;
+  return {
+    diff: fmtSigned(diff),
+    pct: fmtPct(pct)
+  };
 }
 
 async function fetchJson(url) {
   const res = await fetch(url, {
-    headers: { "User-Agent": "Mozilla/5.0" }
+    headers: {
+      "User-Agent": "Mozilla/5.0"
+    }
   });
   if (!res.ok) throw new Error(`請求失敗：${res.status}`);
   return res.json();
 }
 
+async function fetchText(url) {
+  const res = await fetch(url, {
+    headers: {
+      "User-Agent": "Mozilla/5.0"
+    }
+  });
+  if (!res.ok) throw new Error(`請求失敗：${res.status}`);
+  return res.text();
+}
+
+/* -----------------------------
+   台股 / ETF / 指數：TWSE MIS
+----------------------------- */
 async function fetchMisQuotes(codes) {
   const channels = [];
 
@@ -56,13 +82,11 @@ async function fetchMisQuotes(codes) {
     channels.push(`otc_${code}.tw`);
   }
 
-  // 指數區
-  channels.push("tse_t00.tw");
-  channels.push("otc_o00.tw");
+  // 指數
+  channels.push("tse_t00.tw"); // 加權指數
+  channels.push("otc_o00.tw"); // 櫃買指數
 
-  const url =
-    `https://mis.twse.com.tw/stock/api/getStockInfo.jsp?json=1&delay=0&ex_ch=${encodeURIComponent(channels.join("|"))}&_=${Date.now()}`;
-
+  const url = `https://mis.twse.com.tw/stock/api/getStockInfo.jsp?json=1&delay=0&ex_ch=${encodeURIComponent(channels.join("|"))}&_=${Date.now()}`;
   const data = await fetchJson(url);
   const arr = Array.isArray(data.msgArray) ? data.msgArray : [];
 
@@ -99,7 +123,8 @@ async function fetchMisQuotes(codes) {
         price: latestPrice,
         diff: chg.diff,
         pct: chg.pct,
-        updateText: `MIS ${item.d || ""} ${item.t || item.ot || ""}`.trim()
+        updateText: `MIS ${item.d || ""} ${item.t || item.ot || ""}`.trim(),
+        quoteSource: "MIS 即時"
       });
     } else {
       stocks.push(record);
@@ -109,6 +134,9 @@ async function fetchMisQuotes(codes) {
   return { stocks, indices };
 }
 
+/* -----------------------------
+   台股日資料回退
+----------------------------- */
 async function fetchTwseDailyFallback() {
   const url = "https://openapi.twse.com.tw/v1/exchangeReport/STOCK_DAY_ALL";
   const data = await fetchJson(url);
@@ -173,6 +201,132 @@ function mapTpexDaily(item) {
   };
 }
 
+/* -----------------------------
+   全球市場：Yahoo Finance 延遲行情
+----------------------------- */
+async function fetchYahooQuoteSafe(symbol, config = {}) {
+  try {
+    const q = await yahooFinance.quote(symbol);
+    const price = q.regularMarketPrice ?? q.postMarketPrice ?? q.preMarketPrice ?? "--";
+    const prevClose = q.regularMarketPreviousClose ?? "--";
+    const diff = q.regularMarketChange ?? (toNum(price) - toNum(prevClose));
+    const pct = q.regularMarketChangePercent ?? (
+      !Number.isNaN(toNum(price)) && !Number.isNaN(toNum(prevClose)) && toNum(prevClose) !== 0
+        ? ((toNum(price) - toNum(prevClose)) / toNum(prevClose)) * 100
+        : NaN
+    );
+
+    return {
+      code: config.code || symbol,
+      name: config.name || q.shortName || q.longName || symbol,
+      market: config.market || q.fullExchangeName || "海外",
+      price,
+      prevClose,
+      open: q.regularMarketOpen ?? "--",
+      high: q.regularMarketDayHigh ?? "--",
+      low: q.regularMarketDayLow ?? "--",
+      volume: q.regularMarketVolume ?? "--",
+      amount: "--",
+      diff: fmtSigned(diff),
+      pct: fmtPct(pct),
+      updateText: q.regularMarketTime
+        ? `Yahoo ${new Date(q.regularMarketTime * 1000).toLocaleString("zh-TW", { hour12: false })}`
+        : "Yahoo 延遲",
+      quoteSource: "Yahoo 延遲",
+      type: config.type || "global"
+    };
+  } catch (err) {
+    return null;
+  }
+}
+
+async function fetchGlobalMarkets() {
+  const targets = [
+    { symbol: "^VIX", code: "VIX", name: "VIX 波動率指數", market: "Cboe", type: "volatility" },
+    { symbol: "DX-Y.NYB", code: "DXY", name: "美元指數", market: "ICE / Yahoo", type: "fx" },
+
+    { symbol: "TSM", code: "TSM", name: "台積電 ADR", market: "NYSE", type: "adr" },
+    { symbol: "UMC", code: "UMC", name: "聯電 ADR", market: "NYSE", type: "adr" },
+    { symbol: "AUOTY", code: "AUOTY", name: "友達 ADR", market: "OTC", type: "adr" },
+    { symbol: "CHT", code: "CHT", name: "中華電 ADR", market: "NYSE", type: "adr" },
+    { symbol: "ASX", code: "ASX", name: "日月光 ADR", market: "NYSE", type: "adr" },
+    { symbol: "HIMX", code: "HIMX", name: "奇景 ADR", market: "NASDAQ", type: "adr" },
+    { symbol: "IMOS", code: "IMOS", name: "南茂 ADR", market: "NASDAQ", type: "adr" }
+  ];
+
+  const quotes = await Promise.all(targets.map(t => fetchYahooQuoteSafe(t.symbol, t)));
+  return quotes.filter(Boolean);
+}
+
+/* -----------------------------
+   台指期夜盤：TAIFEX 頁面 best effort
+   若頁面格式變動，會回 null，不硬塞錯價
+----------------------------- */
+async function fetchTaifexNightSession() {
+  try {
+    const html = await fetchText("https://www.taifex.com.tw/enl/eIndex");
+    const $ = cheerio.load(html);
+    const text = $("body").text().replace(/\s+/g, " ").trim();
+
+    // best-effort 抓取 TX 夜盤區塊
+    // 如果抓不到，回傳狀態卡，不顯示錯價
+    const match = text.match(/TX-After Hours Trading Session\s*([0-9,]+\.\d+|[0-9,]+)?\s*([+\-]?[0-9,]+\.\d+|[+\-]?[0-9,]+)?\s*([+\-]?[0-9.]+%)?/i);
+
+    if (match && match[1]) {
+      return {
+        code: "TX-NIGHT",
+        name: "台指期夜盤",
+        market: "TAIFEX",
+        price: match[1] || "--",
+        prevClose: "--",
+        open: "--",
+        high: "--",
+        low: "--",
+        volume: "--",
+        amount: "--",
+        diff: match[2] || "--",
+        pct: match[3] || "--",
+        updateText: "TAIFEX 夜盤頁面",
+        quoteSource: "TAIFEX"
+      };
+    }
+
+    return {
+      code: "TX-NIGHT",
+      name: "台指期夜盤",
+      market: "TAIFEX",
+      price: "--",
+      prevClose: "--",
+      open: "--",
+      high: "--",
+      low: "--",
+      volume: "--",
+      amount: "--",
+      diff: "--",
+      pct: "--",
+      updateText: "TAIFEX 夜盤時段 15:00–05:00",
+      quoteSource: "TAIFEX"
+    };
+  } catch (err) {
+    return {
+      code: "TX-NIGHT",
+      name: "台指期夜盤",
+      market: "TAIFEX",
+      price: "--",
+      prevClose: "--",
+      open: "--",
+      high: "--",
+      low: "--",
+      volume: "--",
+      amount: "--",
+      diff: "--",
+      pct: "--",
+      updateText: "TAIFEX 讀取失敗",
+      quoteSource: "TAIFEX"
+    };
+  }
+}
+
 app.get("/api/health", (req, res) => {
   res.json({ ok: true });
 });
@@ -202,16 +356,18 @@ app.get("/api/dashboard", async (req, res) => {
       twseDaily.map(mapTwseDaily).filter(Boolean).forEach(item => dailyMap.set(item.code, item));
       tpexDaily.map(mapTpexDaily).filter(Boolean).forEach(item => dailyMap.set(item.code, item));
 
-      fallbackStocks = missingCodes
-        .map(code => dailyMap.get(code))
-        .filter(Boolean);
+      fallbackStocks = missingCodes.map(code => dailyMap.get(code)).filter(Boolean);
     }
 
-    const stocks = [...mis.stocks, ...fallbackStocks];
+    const [globalMarkets, txNight] = await Promise.all([
+      fetchGlobalMarkets(),
+      fetchTaifexNightSession()
+    ]);
 
     res.json({
       indices: mis.indices,
-      stocks
+      stocks: [...mis.stocks, ...fallbackStocks],
+      global: txNight ? [txNight, ...globalMarkets] : globalMarkets
     });
   } catch (error) {
     console.error("dashboard error:", error);
