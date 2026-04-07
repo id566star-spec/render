@@ -1,7 +1,7 @@
 {
-  "name": "tw-stock-board-render",
+  "name": "pro-tw-trader-board",
   "version": "1.0.0",
-  "description": "台股自選看板 Render 版",
+  "description": "專業交易員台股看板",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
