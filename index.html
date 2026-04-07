@@ -3,327 +3,422 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>專業交易員台股看板</title>
+  <title>專業交易員台股看板｜全市場版</title>
   <style>
     * { box-sizing: border-box; }
-    :root{
-      --bg:#0b1220;
-      --panel:#111827;
-      --panel2:#0f172a;
-      --line:#23314d;
-      --text:#e5e7eb;
-      --sub:#94a3b8;
-      --blue:#3b82f6;
-      --green:#22c55e;
-      --red:#ef4444;
-      --gray:#9ca3af;
-      --chip:#172033;
+
+    :root {
+      --bg: #0b1220;
+      --bg2: #0f172a;
+      --panel: #111827;
+      --panel2: #0f172a;
+      --line: #23314d;
+      --line2: #2b3a55;
+      --text: #e5e7eb;
+      --sub: #94a3b8;
+      --blue: #3b82f6;
+      --blue2: #60a5fa;
+      --green: #22c55e;
+      --red: #ef4444;
+      --gray: #9ca3af;
+      --chip: #172033;
+      --shadow: 0 12px 28px rgba(0,0,0,.22);
     }
-    body{
-      margin:0;
-      font-family:"Microsoft JhengHei","PingFang TC",sans-serif;
-      background:linear-gradient(180deg,#0b1220 0%,#0f172a 100%);
-      color:var(--text);
+
+    body {
+      margin: 0;
+      font-family: "Microsoft JhengHei", "PingFang TC", sans-serif;
+      background: linear-gradient(180deg, var(--bg) 0%, var(--bg2) 100%);
+      color: var(--text);
     }
-    .topbar{
-      position:sticky;
-      top:0;
-      z-index:30;
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 50;
       backdrop-filter: blur(10px);
-      background:rgba(11,18,32,.9);
-      border-bottom:1px solid rgba(59,130,246,.18);
-    }
-    .topbar-inner{
-      max-width:1400px;
-      margin:0 auto;
-      padding:14px 16px;
-      display:flex;
-      gap:10px;
-      flex-wrap:wrap;
-      align-items:center;
-    }
-    .logo{
-      display:flex;
-      align-items:center;
-      gap:10px;
-      padding:10px 14px;
-      border-radius:14px;
-      background:rgba(59,130,246,.1);
-      border:1px solid rgba(59,130,246,.28);
-      color:#dbeafe;
-      font-weight:800;
-    }
-    .input, .select{
-      height:42px;
-      border-radius:12px;
-      border:1px solid var(--line);
-      background:#0b1220;
-      color:var(--text);
-      padding:0 14px;
-      font-size:15px;
-      outline:none;
-    }
-    .input{ width:200px; }
-    .input:focus,.select:focus{
-      border-color:var(--blue);
-      box-shadow:0 0 0 3px rgba(59,130,246,.15);
-    }
-    .btn{
-      height:42px;
-      border:none;
-      border-radius:12px;
-      padding:0 16px;
-      font-weight:800;
-      cursor:pointer;
-      transition:.18s;
-    }
-    .btn-primary{ background:var(--blue); color:white; }
-    .btn-primary:hover{ filter:brightness(1.08); }
-    .btn-dark{ background:#1f2937; color:white; border:1px solid #334155; }
-    .btn-dark:hover{ background:#273449; }
-    .btn-ghost{ background:#111827; color:#dbeafe; border:1px solid rgba(59,130,246,.2); }
-    .btn-ghost:hover{ background:#162036; }
-
-    .page{
-      max-width:1400px;
-      margin:0 auto;
-      padding:18px 16px 36px;
-    }
-    .summary{
-      display:grid;
-      grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
-      gap:12px;
-      margin-bottom:16px;
-    }
-    .summary-card{
-      background:rgba(17,24,39,.92);
-      border:1px solid var(--line);
-      border-radius:16px;
-      padding:14px 16px;
-      box-shadow:0 8px 30px rgba(0,0,0,.18);
-    }
-    .summary-title{
-      color:var(--sub);
-      font-size:12px;
-      margin-bottom:6px;
-    }
-    .summary-value{
-      font-size:18px;
-      font-weight:800;
-      color:#f8fafc;
+      background: rgba(11, 18, 32, 0.92);
+      border-bottom: 1px solid rgba(59,130,246,.18);
     }
 
-    .section-title{
-      margin:22px 0 12px;
-      font-size:18px;
-      font-weight:900;
-      color:#dbeafe;
-      display:flex;
-      align-items:center;
-      gap:8px;
+    .topbar-inner {
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: 14px 16px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
     }
 
-    .indices{
-      display:grid;
-      grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
-      gap:14px;
-      margin-bottom:8px;
-    }
-    .index-card{
-      background:linear-gradient(180deg,rgba(17,24,39,.96),rgba(15,23,42,.96));
-      border:1px solid rgba(59,130,246,.18);
-      border-radius:18px;
-      padding:16px;
-      box-shadow:0 10px 28px rgba(0,0,0,.18);
-    }
-    .index-name{
-      font-size:14px;
-      color:var(--sub);
-      margin-bottom:8px;
-    }
-    .index-value{
-      font-size:34px;
-      font-weight:900;
-      line-height:1;
-      margin-bottom:8px;
-    }
-    .index-change{
-      font-size:16px;
-      font-weight:800;
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      border-radius: 14px;
+      background: rgba(59,130,246,.1);
+      border: 1px solid rgba(59,130,246,.28);
+      color: #dbeafe;
+      font-weight: 900;
+      letter-spacing: .3px;
     }
 
-    .toolbar2{
-      display:flex;
-      gap:10px;
-      flex-wrap:wrap;
-      align-items:center;
-      margin:12px 0 16px;
-    }
-    .chip{
-      height:38px;
-      padding:0 14px;
-      border-radius:999px;
-      border:1px solid var(--line);
-      background:var(--chip);
-      color:#dbeafe;
-      cursor:pointer;
-      font-weight:700;
-    }
-    .chip.active{
-      background:rgba(59,130,246,.18);
-      border-color:rgba(59,130,246,.45);
+    .input,
+    .select {
+      height: 42px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: #0b1220;
+      color: var(--text);
+      padding: 0 14px;
+      font-size: 15px;
+      outline: none;
     }
 
-    .board{
-      display:grid;
-      grid-template-columns:repeat(auto-fit,minmax(320px,1fr));
-      gap:16px;
-    }
-    .card{
-      background:linear-gradient(180deg,rgba(17,24,39,.98),rgba(15,23,42,.98));
-      border:1px solid rgba(59,130,246,.2);
-      border-top:3px solid var(--blue);
-      border-radius:18px;
-      overflow:hidden;
-      box-shadow:0 12px 28px rgba(0,0,0,.2);
-      min-height:345px;
-      display:flex;
-      flex-direction:column;
-    }
-    .card-head{
-      padding:16px 16px 10px;
-      display:flex;
-      justify-content:space-between;
-      gap:10px;
-      align-items:flex-start;
-    }
-    .stock-code{
-      font-size:30px;
-      font-weight:900;
-      line-height:1.1;
-      color:#f8fafc;
-    }
-    .stock-name{
-      margin-top:6px;
-      color:#cbd5e1;
-      font-size:14px;
-    }
-    .badge-row{
-      display:flex;
-      gap:6px;
-      flex-wrap:wrap;
-      margin-top:8px;
-    }
-    .badge{
-      font-size:11px;
-      color:#dbeafe;
-      background:#162036;
-      border:1px solid #25416f;
-      padding:4px 8px;
-      border-radius:999px;
-    }
-    .remove-btn{
-      border:none;
-      background:transparent;
-      color:#cbd5e1;
-      font-size:24px;
-      cursor:pointer;
-      width:30px;
-      height:30px;
-      border-radius:999px;
-    }
-    .remove-btn:hover{
-      background:#1f2937;
-      color:#fca5a5;
-    }
-    .price-area{
-      margin:0 16px 14px;
-      border:1px solid var(--line);
-      background:rgba(15,23,42,.88);
-      border-radius:16px;
-      padding:14px;
-    }
-    .price-row{
-      display:flex;
-      justify-content:space-between;
-      align-items:flex-start;
-      gap:12px;
-      margin-bottom:10px;
-    }
-    .price{
-      font-size:46px;
-      font-weight:900;
-      line-height:1;
-    }
-    .change-box{
-      text-align:right;
-    }
-    .chg{
-      font-size:18px;
-      font-weight:900;
-    }
-    .pct{
-      font-size:14px;
-      font-weight:800;
-      margin-top:4px;
-    }
-    .up{ color:var(--red); }
-    .down{ color:var(--green); }
-    .flat{ color:var(--gray); }
-
-    .mini-grid{
-      display:grid;
-      grid-template-columns:repeat(2,1fr);
-      gap:10px;
-    }
-    .mini{
-      border:1px solid #263246;
-      border-radius:12px;
-      padding:10px;
-      background:rgba(17,24,39,.6);
-    }
-    .mini-label{
-      font-size:12px;
-      color:var(--sub);
-      margin-bottom:4px;
-    }
-    .mini-value{
-      font-size:15px;
-      font-weight:800;
-      color:#f8fafc;
-      word-break:break-all;
-    }
-    .card-foot{
-      margin-top:auto;
-      padding:12px 16px 16px;
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      gap:10px;
-    }
-    .link{
-      color:#60a5fa;
-      text-decoration:none;
-      font-weight:800;
-      font-size:14px;
-    }
-    .link:hover{ text-decoration:underline; }
-    .muted{ color:var(--sub); font-size:12px; }
-
-    .empty{
-      grid-column:1 / -1;
-      background:rgba(17,24,39,.95);
-      border:1px dashed #32517e;
-      border-radius:18px;
-      padding:42px 16px;
-      text-align:center;
-      color:var(--sub);
+    .input {
+      width: 220px;
     }
 
-    @media (max-width:640px){
-      .input,.select,.btn{ width:100%; }
-      .stock-code{ font-size:28px; }
-      .price{ font-size:40px; }
+    .input:focus,
+    .select:focus {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 3px rgba(59,130,246,.15);
+    }
+
+    .btn {
+      height: 42px;
+      border: none;
+      border-radius: 12px;
+      padding: 0 16px;
+      font-size: 14px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: .18s;
+    }
+
+    .btn-primary {
+      background: var(--blue);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      filter: brightness(1.08);
+    }
+
+    .btn-dark {
+      background: #1f2937;
+      color: white;
+      border: 1px solid #334155;
+    }
+
+    .btn-dark:hover {
+      background: #273449;
+    }
+
+    .btn-ghost {
+      background: #111827;
+      color: #dbeafe;
+      border: 1px solid rgba(59,130,246,.2);
+    }
+
+    .btn-ghost:hover {
+      background: #162036;
+    }
+
+    .page {
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: 18px 16px 36px;
+    }
+
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .summary-card {
+      background: rgba(17,24,39,.94);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 14px 16px;
+      box-shadow: 0 8px 30px rgba(0,0,0,.18);
+    }
+
+    .summary-title {
+      color: var(--sub);
+      font-size: 12px;
+      margin-bottom: 6px;
+    }
+
+    .summary-value {
+      font-size: 18px;
+      font-weight: 900;
+      color: #f8fafc;
+    }
+
+    .section-title {
+      margin: 24px 0 12px;
+      font-size: 18px;
+      font-weight: 900;
+      color: #dbeafe;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .indices {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 14px;
+      margin-bottom: 8px;
+    }
+
+    .index-card {
+      background: linear-gradient(180deg, rgba(17,24,39,.96), rgba(15,23,42,.96));
+      border: 1px solid rgba(59,130,246,.18);
+      border-radius: 18px;
+      padding: 16px;
+      box-shadow: 0 10px 28px rgba(0,0,0,.18);
+    }
+
+    .index-name {
+      font-size: 14px;
+      color: var(--sub);
+      margin-bottom: 8px;
+    }
+
+    .index-value {
+      font-size: 34px;
+      font-weight: 900;
+      line-height: 1;
+      margin-bottom: 8px;
+    }
+
+    .index-change {
+      font-size: 16px;
+      font-weight: 800;
+    }
+
+    .toolbar2 {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+      margin: 12px 0 16px;
+    }
+
+    .chip {
+      height: 38px;
+      padding: 0 14px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: var(--chip);
+      color: #dbeafe;
+      cursor: pointer;
+      font-weight: 700;
+      transition: .15s;
+    }
+
+    .chip.active {
+      background: rgba(59,130,246,.18);
+      border-color: rgba(59,130,246,.45);
+    }
+
+    .board {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 16px;
+    }
+
+    .card {
+      background: linear-gradient(180deg, rgba(17,24,39,.98), rgba(15,23,42,.98));
+      border: 1px solid rgba(59,130,246,.2);
+      border-top: 3px solid var(--blue);
+      border-radius: 18px;
+      overflow: hidden;
+      box-shadow: var(--shadow);
+      min-height: 345px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .card-head {
+      padding: 16px 16px 10px;
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: flex-start;
+    }
+
+    .stock-code {
+      font-size: 30px;
+      font-weight: 900;
+      line-height: 1.1;
+      color: #f8fafc;
+    }
+
+    .stock-name {
+      margin-top: 6px;
+      color: #cbd5e1;
+      font-size: 14px;
+    }
+
+    .badge-row {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+
+    .badge {
+      font-size: 11px;
+      color: #dbeafe;
+      background: #162036;
+      border: 1px solid #25416f;
+      padding: 4px 8px;
+      border-radius: 999px;
+    }
+
+    .remove-btn {
+      border: none;
+      background: transparent;
+      color: #cbd5e1;
+      font-size: 24px;
+      cursor: pointer;
+      width: 30px;
+      height: 30px;
+      border-radius: 999px;
+      line-height: 1;
+    }
+
+    .remove-btn:hover {
+      background: #1f2937;
+      color: #fca5a5;
+    }
+
+    .price-area {
+      margin: 0 16px 14px;
+      border: 1px solid var(--line);
+      background: rgba(15,23,42,.88);
+      border-radius: 16px;
+      padding: 14px;
+    }
+
+    .price-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    .price {
+      font-size: 46px;
+      font-weight: 900;
+      line-height: 1;
+    }
+
+    .change-box {
+      text-align: right;
+    }
+
+    .chg {
+      font-size: 18px;
+      font-weight: 900;
+    }
+
+    .pct {
+      font-size: 14px;
+      font-weight: 800;
+      margin-top: 4px;
+    }
+
+    .up { color: var(--red); }
+    .down { color: var(--green); }
+    .flat { color: var(--gray); }
+
+    .mini-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+
+    .mini {
+      border: 1px solid #263246;
+      border-radius: 12px;
+      padding: 10px;
+      background: rgba(17,24,39,.6);
+    }
+
+    .mini-label {
+      font-size: 12px;
+      color: var(--sub);
+      margin-bottom: 4px;
+    }
+
+    .mini-value {
+      font-size: 15px;
+      font-weight: 800;
+      color: #f8fafc;
+      word-break: break-all;
+    }
+
+    .card-foot {
+      margin-top: auto;
+      padding: 12px 16px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .link {
+      color: var(--blue2);
+      text-decoration: none;
+      font-weight: 800;
+      font-size: 14px;
+    }
+
+    .link:hover {
+      text-decoration: underline;
+    }
+
+    .muted {
+      color: var(--sub);
+      font-size: 12px;
+    }
+
+    .empty {
+      grid-column: 1 / -1;
+      background: rgba(17,24,39,.95);
+      border: 1px dashed #32517e;
+      border-radius: 18px;
+      padding: 42px 16px;
+      text-align: center;
+      color: var(--sub);
+    }
+
+    @media (max-width: 640px) {
+      .input,
+      .select,
+      .btn {
+        width: 100%;
+      }
+
+      .stock-code {
+        font-size: 28px;
+      }
+
+      .price {
+        font-size: 40px;
+      }
+
+      .index-value {
+        font-size: 30px;
+      }
     }
   </style>
 </head>
@@ -335,6 +430,7 @@
       <button class="btn btn-primary" onclick="addStock()">+ 加入看板</button>
       <button class="btn btn-dark" onclick="refreshBoard()">重新整理</button>
       <button class="btn btn-ghost" onclick="editWatchlist()">編輯自選股</button>
+
       <select id="sortSelect" class="select" onchange="renderBoard()">
         <option value="custom">排序：自選順序</option>
         <option value="pctDesc">排序：漲幅高→低</option>
@@ -361,12 +457,15 @@
       </div>
       <div class="summary-card">
         <div class="summary-title">模式</div>
-        <div class="summary-value">近即時＋日資料回退</div>
+        <div class="summary-value">全市場混合資料源</div>
       </div>
     </div>
 
     <div class="section-title">📊 指數區</div>
     <div id="indices" class="indices"></div>
+
+    <div class="section-title">🌍 全市場</div>
+    <div id="globalMarkets" class="indices"></div>
 
     <div class="section-title">🎯 自選看板</div>
     <div class="toolbar2">
@@ -381,10 +480,11 @@
   </div>
 
   <script>
-    const STORAGE_KEY = "pro_tw_board_watchlist_v1";
+    const STORAGE_KEY = "pro_tw_full_market_board_v1";
     const DEFAULT_WATCHLIST = ["2330", "2454", "0050", "00631L"];
+
     let currentFilter = "all";
-    let dashboardCache = { indices: [], stocks: [] };
+    let dashboardCache = { indices: [], stocks: [], global: [] };
 
     function getWatchlist() {
       const raw = localStorage.getItem(STORAGE_KEY);
@@ -466,23 +566,22 @@
     }
 
     function formatNumber(val) {
-      if (val === null || val === undefined || val === "" || val === "-") return "--";
+      if (val === null || val === undefined || val === "" || val === "-" || val === "--") return "--";
       const num = Number(String(val).replace(/,/g, ""));
       if (Number.isNaN(num)) return String(val);
       return num.toLocaleString("zh-TW");
     }
 
     function formatPrice(val) {
-      if (val === null || val === undefined || val === "" || val === "-") return "--";
+      if (val === null || val === undefined || val === "" || val === "-" || val === "--") return "--";
       const num = Number(String(val).replace(/,/g, ""));
       if (Number.isNaN(num)) return String(val);
-      if (num >= 1000) return num.toFixed(0);
-      if (num >= 100) return num.toFixed(2);
+      if (Math.abs(num) >= 1000) return num.toFixed(0);
       return num.toFixed(2);
     }
 
     function toNum(val) {
-      const num = Number(String(val).replace(/,/g, ""));
+      const num = Number(String(val).replace(/,/g, "").replace("%", ""));
       return Number.isNaN(num) ? NaN : num;
     }
 
@@ -509,14 +608,27 @@
       const arr = [...list];
 
       if (mode === "pctDesc") {
-        arr.sort((a, b) => (toNum(b.pct) || -9999) - (toNum(a.pct) || -9999));
+        arr.sort((a, b) => {
+          const av = toNum(a.pct);
+          const bv = toNum(b.pct);
+          return (Number.isNaN(bv) ? -999999 : bv) - (Number.isNaN(av) ? -999999 : av);
+        });
       } else if (mode === "pctAsc") {
-        arr.sort((a, b) => (toNum(a.pct) || 9999) - (toNum(b.pct) || 9999));
+        arr.sort((a, b) => {
+          const av = toNum(a.pct);
+          const bv = toNum(b.pct);
+          return (Number.isNaN(av) ? 999999 : av) - (Number.isNaN(bv) ? 999999 : bv);
+        });
       } else if (mode === "volumeDesc") {
-        arr.sort((a, b) => (toNum(b.volume) || -1) - (toNum(a.volume) || -1));
+        arr.sort((a, b) => {
+          const av = toNum(a.volume);
+          const bv = toNum(b.volume);
+          return (Number.isNaN(bv) ? -1 : bv) - (Number.isNaN(av) ? -1 : av);
+        });
       } else if (mode === "codeAsc") {
         arr.sort((a, b) => String(a.code).localeCompare(String(b.code), "zh-Hant"));
       }
+
       return arr;
     }
 
@@ -538,7 +650,33 @@
             <div class="index-change ${cls}">
               ${item.diff || "--"}　${item.pct || "--"}
             </div>
-            <div class="muted" style="margin-top:10px;">${item.updateText || "--"}</div>
+            <div class="muted" style="margin-top:10px;">${item.quoteSource || "--"}</div>
+            <div class="muted" style="margin-top:4px;">${item.updateText || "--"}</div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function renderGlobalMarkets() {
+      const el = document.getElementById("globalMarkets");
+      const list = dashboardCache.global || [];
+
+      if (!list.length) {
+        el.innerHTML = `<div class="empty">目前抓不到全市場資料</div>`;
+        return;
+      }
+
+      el.innerHTML = list.map(item => {
+        const cls = getDisplayClass(item.diff);
+        return `
+          <div class="index-card">
+            <div class="index-name">${item.name}</div>
+            <div class="index-value ${cls}">${formatPrice(item.price)}</div>
+            <div class="index-change ${cls}">
+              ${item.diff || "--"}　${item.pct || "--"}
+            </div>
+            <div class="muted" style="margin-top:10px;">${item.market || "--"}｜${item.quoteSource || "--"}</div>
+            <div class="muted" style="margin-top:4px;">${item.updateText || "--"}</div>
           </div>
         `;
       }).join("");
@@ -547,10 +685,12 @@
     function renderBoard() {
       updateSummary();
       renderIndices();
+      renderGlobalMarkets();
 
       const board = document.getElementById("board");
       const watchlist = getWatchlist();
       const stockMap = new Map((dashboardCache.stocks || []).map(x => [x.code, x]));
+
       let list = watchlist.map(code => stockMap.get(code) || {
         code,
         name: "查無資料",
@@ -565,6 +705,7 @@
         diff: "--",
         pct: "--",
         updateText: "--",
+        quoteSource: "--",
         type: "stock"
       });
 
@@ -614,12 +755,30 @@
               </div>
 
               <div class="mini-grid">
-                <div class="mini"><div class="mini-label">開盤</div><div class="mini-value">${formatPrice(item.open)}</div></div>
-                <div class="mini"><div class="mini-label">昨收</div><div class="mini-value">${formatPrice(item.prevClose)}</div></div>
-                <div class="mini"><div class="mini-label">最高</div><div class="mini-value">${formatPrice(item.high)}</div></div>
-                <div class="mini"><div class="mini-label">最低</div><div class="mini-value">${formatPrice(item.low)}</div></div>
-                <div class="mini"><div class="mini-label">成交量</div><div class="mini-value">${formatNumber(item.volume)}</div></div>
-                <div class="mini"><div class="mini-label">成交金額</div><div class="mini-value">${formatNumber(item.amount)}</div></div>
+                <div class="mini">
+                  <div class="mini-label">開盤</div>
+                  <div class="mini-value">${formatPrice(item.open)}</div>
+                </div>
+                <div class="mini">
+                  <div class="mini-label">昨收</div>
+                  <div class="mini-value">${formatPrice(item.prevClose)}</div>
+                </div>
+                <div class="mini">
+                  <div class="mini-label">最高</div>
+                  <div class="mini-value">${formatPrice(item.high)}</div>
+                </div>
+                <div class="mini">
+                  <div class="mini-label">最低</div>
+                  <div class="mini-value">${formatPrice(item.low)}</div>
+                </div>
+                <div class="mini">
+                  <div class="mini-label">成交量</div>
+                  <div class="mini-value">${formatNumber(item.volume)}</div>
+                </div>
+                <div class="mini">
+                  <div class="mini-label">成交金額</div>
+                  <div class="mini-value">${formatNumber(item.amount)}</div>
+                </div>
               </div>
             </div>
 
@@ -634,31 +793,47 @@
 
     async function refreshBoard() {
       const watchlist = getWatchlist();
+
       if (!watchlist.length) {
-        dashboardCache = { indices: [], stocks: [] };
+        dashboardCache = { indices: [], stocks: [], global: [] };
         renderBoard();
         return;
       }
 
       updateSummary("更新中");
+
       document.getElementById("board").innerHTML = watchlist.map(code => `
         <div class="card">
           <div class="card-head">
-            <div><div class="stock-code">${code}</div><div class="stock-name">載入中...</div></div>
+            <div>
+              <div class="stock-code">${code}</div>
+              <div class="stock-name">載入中...</div>
+            </div>
             <button class="remove-btn" onclick="removeStock('${code}')">×</button>
           </div>
           <div class="price-area" style="display:flex;align-items:center;justify-content:center;min-height:180px;">
-            <div class="muted">正在抓取即時資料...</div>
+            <div class="muted">正在抓取資料...</div>
           </div>
         </div>
       `).join("");
 
+      document.getElementById("indices").innerHTML = `<div class="empty">指數載入中...</div>`;
+      document.getElementById("globalMarkets").innerHTML = `<div class="empty">全市場載入中...</div>`;
+
       try {
-        const res = await fetch(`/api/dashboard?codes=${encodeURIComponent(watchlist.join(","))}`, { cache: "no-store" });
-        if (!res.ok) throw new Error(await res.text());
+        const res = await fetch(`/api/dashboard?codes=${encodeURIComponent(watchlist.join(","))}`, {
+          cache: "no-store"
+        });
+
+        if (!res.ok) {
+          throw new Error(await res.text());
+        }
+
         dashboardCache = await res.json();
+
         document.getElementById("lastUpdateText").textContent =
           new Date().toLocaleString("zh-TW", { hour12: false });
+
         updateSummary("已更新");
         renderBoard();
       } catch (err) {
@@ -669,10 +844,12 @@
             <div>${err.message}</div>
           </div>
         `;
+        document.getElementById("indices").innerHTML = `<div class="empty">指數載入失敗</div>`;
+        document.getElementById("globalMarkets").innerHTML = `<div class="empty">全市場載入失敗</div>`;
       }
     }
 
-    document.getElementById("stockInput").addEventListener("keydown", e => {
+    document.getElementById("stockInput").addEventListener("keydown", (e) => {
       if (e.key === "Enter") addStock();
     });
 
