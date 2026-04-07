@@ -3,297 +3,397 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>我的台股看板</title>
+  <title>專業交易員台股看板</title>
   <style>
     * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      font-family: "Microsoft JhengHei", "PingFang TC", sans-serif;
-      background: #f3f5f7;
-      color: #1f2937;
+    :root{
+      --bg:#0b1220;
+      --panel:#111827;
+      --panel2:#0f172a;
+      --line:#23314d;
+      --text:#e5e7eb;
+      --sub:#94a3b8;
+      --blue:#3b82f6;
+      --green:#22c55e;
+      --red:#ef4444;
+      --gray:#9ca3af;
+      --chip:#172033;
     }
-    .topbar {
-      background: #fff;
-      border-bottom: 1px solid #e5e7eb;
-      padding: 14px 18px;
-      position: sticky;
-      top: 0;
-      z-index: 20;
+    body{
+      margin:0;
+      font-family:"Microsoft JhengHei","PingFang TC",sans-serif;
+      background:linear-gradient(180deg,#0b1220 0%,#0f172a 100%);
+      color:var(--text);
     }
-    .topbar-inner {
-      max-width: 1280px;
-      margin: 0 auto;
-      display: flex;
-      gap: 10px;
-      align-items: center;
-      flex-wrap: wrap;
+    .topbar{
+      position:sticky;
+      top:0;
+      z-index:30;
+      backdrop-filter: blur(10px);
+      background:rgba(11,18,32,.9);
+      border-bottom:1px solid rgba(59,130,246,.18);
     }
-    .logo {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      font-weight: 700;
-      color: #2563eb;
-      background: #eff6ff;
-      border: 1px solid #dbeafe;
-      padding: 10px 14px;
-      border-radius: 12px;
+    .topbar-inner{
+      max-width:1400px;
+      margin:0 auto;
+      padding:14px 16px;
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      align-items:center;
     }
-    .code-input {
-      height: 42px;
-      width: 180px;
-      padding: 0 14px;
-      border: 1px solid #d1d5db;
-      border-radius: 10px;
-      background: #ffffff;
-      font-size: 15px;
-      outline: none;
+    .logo{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      padding:10px 14px;
+      border-radius:14px;
+      background:rgba(59,130,246,.1);
+      border:1px solid rgba(59,130,246,.28);
+      color:#dbeafe;
+      font-weight:800;
     }
-    .code-input:focus {
-      border-color: #2563eb;
-      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+    .input, .select{
+      height:42px;
+      border-radius:12px;
+      border:1px solid var(--line);
+      background:#0b1220;
+      color:var(--text);
+      padding:0 14px;
+      font-size:15px;
+      outline:none;
     }
-    .btn {
-      height: 42px;
-      padding: 0 16px;
-      border: none;
-      border-radius: 10px;
-      cursor: pointer;
-      font-size: 14px;
-      font-weight: 700;
-      transition: .2s;
+    .input{ width:200px; }
+    .input:focus,.select:focus{
+      border-color:var(--blue);
+      box-shadow:0 0 0 3px rgba(59,130,246,.15);
     }
-    .btn-primary { background: #2563eb; color: #fff; }
-    .btn-primary:hover { background: #1d4ed8; }
-    .btn-secondary { background: #111827; color: #fff; }
-    .btn-secondary:hover { background: #000; }
-    .btn-light {
-      background: #f3f4f6;
-      color: #111827;
-      border: 1px solid #e5e7eb;
+    .btn{
+      height:42px;
+      border:none;
+      border-radius:12px;
+      padding:0 16px;
+      font-weight:800;
+      cursor:pointer;
+      transition:.18s;
     }
-    .btn-light:hover { background: #e5e7eb; }
+    .btn-primary{ background:var(--blue); color:white; }
+    .btn-primary:hover{ filter:brightness(1.08); }
+    .btn-dark{ background:#1f2937; color:white; border:1px solid #334155; }
+    .btn-dark:hover{ background:#273449; }
+    .btn-ghost{ background:#111827; color:#dbeafe; border:1px solid rgba(59,130,246,.2); }
+    .btn-ghost:hover{ background:#162036; }
 
-    .page {
-      max-width: 1280px;
-      margin: 20px auto;
-      padding: 0 16px 30px;
+    .page{
+      max-width:1400px;
+      margin:0 auto;
+      padding:18px 16px 36px;
     }
-    .summary-bar {
-      display: flex;
-      gap: 12px;
-      flex-wrap: wrap;
-      margin-bottom: 16px;
+    .summary{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+      gap:12px;
+      margin-bottom:16px;
     }
-    .summary-chip {
-      background: #fff;
-      border: 1px solid #e5e7eb;
-      padding: 10px 14px;
-      border-radius: 12px;
-      font-size: 14px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    .summary-card{
+      background:rgba(17,24,39,.92);
+      border:1px solid var(--line);
+      border-radius:16px;
+      padding:14px 16px;
+      box-shadow:0 8px 30px rgba(0,0,0,.18);
     }
-    .board {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
-      gap: 16px;
+    .summary-title{
+      color:var(--sub);
+      font-size:12px;
+      margin-bottom:6px;
     }
-    .card {
-      background: #fff;
-      border: 1px solid #dbeafe;
-      border-top: 4px solid #2563eb;
-      border-radius: 14px;
-      box-shadow: 0 4px 18px rgba(0,0,0,0.06);
-      overflow: hidden;
-      min-height: 330px;
-      display: flex;
-      flex-direction: column;
-    }
-    .card-head {
-      padding: 16px 16px 8px;
-      display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      gap: 10px;
-    }
-    .stock-main { min-width: 0; }
-    .stock-code {
-      font-size: 30px;
-      font-weight: 800;
-      line-height: 1.1;
-      color: #111827;
-      letter-spacing: 0.5px;
-    }
-    .stock-name {
-      margin-top: 6px;
-      font-size: 14px;
-      color: #6b7280;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      max-width: 210px;
-    }
-    .remove-btn {
-      border: none;
-      background: transparent;
-      color: #9ca3af;
-      cursor: pointer;
-      font-size: 22px;
-      line-height: 1;
-      padding: 0;
-      width: 28px;
-      height: 28px;
-      border-radius: 50%;
-    }
-    .remove-btn:hover {
-      background: #f3f4f6;
-      color: #ef4444;
-    }
-    .price-area {
-      margin: 0 16px 12px;
-      background: #f8fafc;
-      border: 1px solid #eef2f7;
-      border-radius: 12px;
-      padding: 14px;
-    }
-    .price-row {
-      display: flex;
-      align-items: end;
-      justify-content: space-between;
-      gap: 10px;
-      margin-bottom: 10px;
-    }
-    .price {
-      font-size: 36px;
-      font-weight: 800;
-      line-height: 1;
-    }
-    .chg-box { text-align: right; }
-    .chg {
-      font-size: 18px;
-      font-weight: 800;
-    }
-    .chg-pct {
-      font-size: 14px;
-      margin-top: 4px;
-      font-weight: 700;
-    }
-    .up { color: #dc2626; }
-    .down { color: #16a34a; }
-    .flat { color: #6b7280; }
-
-    .mini-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 10px;
-      margin-top: 8px;
-    }
-    .mini-item {
-      background: #fff;
-      border: 1px solid #e5e7eb;
-      border-radius: 10px;
-      padding: 10px;
-    }
-    .mini-label {
-      font-size: 12px;
-      color: #6b7280;
-      margin-bottom: 4px;
-    }
-    .mini-value {
-      font-size: 16px;
-      font-weight: 700;
-      color: #111827;
+    .summary-value{
+      font-size:18px;
+      font-weight:800;
+      color:#f8fafc;
     }
 
-    .card-foot {
-      margin-top: auto;
-      padding: 12px 16px 16px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-    }
-    .detail-link {
-      color: #2563eb;
-      text-decoration: none;
-      font-size: 14px;
-      font-weight: 700;
-    }
-    .detail-link:hover { text-decoration: underline; }
-
-    .update-time {
-      color: #6b7280;
-      font-size: 12px;
+    .section-title{
+      margin:22px 0 12px;
+      font-size:18px;
+      font-weight:900;
+      color:#dbeafe;
+      display:flex;
+      align-items:center;
+      gap:8px;
     }
 
-    .empty {
-      background: #fff;
-      border: 2px dashed #cbd5e1;
-      border-radius: 16px;
-      padding: 40px 20px;
-      text-align: center;
-      color: #6b7280;
-      grid-column: 1 / -1;
+    .indices{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+      gap:14px;
+      margin-bottom:8px;
+    }
+    .index-card{
+      background:linear-gradient(180deg,rgba(17,24,39,.96),rgba(15,23,42,.96));
+      border:1px solid rgba(59,130,246,.18);
+      border-radius:18px;
+      padding:16px;
+      box-shadow:0 10px 28px rgba(0,0,0,.18);
+    }
+    .index-name{
+      font-size:14px;
+      color:var(--sub);
+      margin-bottom:8px;
+    }
+    .index-value{
+      font-size:34px;
+      font-weight:900;
+      line-height:1;
+      margin-bottom:8px;
+    }
+    .index-change{
+      font-size:16px;
+      font-weight:800;
     }
 
-    .loading {
-      color: #6b7280;
-      font-size: 14px;
+    .toolbar2{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      align-items:center;
+      margin:12px 0 16px;
+    }
+    .chip{
+      height:38px;
+      padding:0 14px;
+      border-radius:999px;
+      border:1px solid var(--line);
+      background:var(--chip);
+      color:#dbeafe;
+      cursor:pointer;
+      font-weight:700;
+    }
+    .chip.active{
+      background:rgba(59,130,246,.18);
+      border-color:rgba(59,130,246,.45);
     }
 
-    .error {
-      color: #dc2626;
-      font-size: 14px;
-      font-weight: 700;
-      text-align: center;
+    .board{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(320px,1fr));
+      gap:16px;
+    }
+    .card{
+      background:linear-gradient(180deg,rgba(17,24,39,.98),rgba(15,23,42,.98));
+      border:1px solid rgba(59,130,246,.2);
+      border-top:3px solid var(--blue);
+      border-radius:18px;
+      overflow:hidden;
+      box-shadow:0 12px 28px rgba(0,0,0,.2);
+      min-height:345px;
+      display:flex;
+      flex-direction:column;
+    }
+    .card-head{
+      padding:16px 16px 10px;
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      align-items:flex-start;
+    }
+    .stock-code{
+      font-size:30px;
+      font-weight:900;
+      line-height:1.1;
+      color:#f8fafc;
+    }
+    .stock-name{
+      margin-top:6px;
+      color:#cbd5e1;
+      font-size:14px;
+    }
+    .badge-row{
+      display:flex;
+      gap:6px;
+      flex-wrap:wrap;
+      margin-top:8px;
+    }
+    .badge{
+      font-size:11px;
+      color:#dbeafe;
+      background:#162036;
+      border:1px solid #25416f;
+      padding:4px 8px;
+      border-radius:999px;
+    }
+    .remove-btn{
+      border:none;
+      background:transparent;
+      color:#cbd5e1;
+      font-size:24px;
+      cursor:pointer;
+      width:30px;
+      height:30px;
+      border-radius:999px;
+    }
+    .remove-btn:hover{
+      background:#1f2937;
+      color:#fca5a5;
+    }
+    .price-area{
+      margin:0 16px 14px;
+      border:1px solid var(--line);
+      background:rgba(15,23,42,.88);
+      border-radius:16px;
+      padding:14px;
+    }
+    .price-row{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap:12px;
+      margin-bottom:10px;
+    }
+    .price{
+      font-size:46px;
+      font-weight:900;
+      line-height:1;
+    }
+    .change-box{
+      text-align:right;
+    }
+    .chg{
+      font-size:18px;
+      font-weight:900;
+    }
+    .pct{
+      font-size:14px;
+      font-weight:800;
+      margin-top:4px;
+    }
+    .up{ color:var(--red); }
+    .down{ color:var(--green); }
+    .flat{ color:var(--gray); }
+
+    .mini-grid{
+      display:grid;
+      grid-template-columns:repeat(2,1fr);
+      gap:10px;
+    }
+    .mini{
+      border:1px solid #263246;
+      border-radius:12px;
+      padding:10px;
+      background:rgba(17,24,39,.6);
+    }
+    .mini-label{
+      font-size:12px;
+      color:var(--sub);
+      margin-bottom:4px;
+    }
+    .mini-value{
+      font-size:15px;
+      font-weight:800;
+      color:#f8fafc;
+      word-break:break-all;
+    }
+    .card-foot{
+      margin-top:auto;
+      padding:12px 16px 16px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+    }
+    .link{
+      color:#60a5fa;
+      text-decoration:none;
+      font-weight:800;
+      font-size:14px;
+    }
+    .link:hover{ text-decoration:underline; }
+    .muted{ color:var(--sub); font-size:12px; }
+
+    .empty{
+      grid-column:1 / -1;
+      background:rgba(17,24,39,.95);
+      border:1px dashed #32517e;
+      border-radius:18px;
+      padding:42px 16px;
+      text-align:center;
+      color:var(--sub);
     }
 
-    .hint {
-      font-size: 13px;
-      color: #6b7280;
-      margin-top: 4px;
-    }
-
-    @media (max-width: 640px) {
-      .topbar-inner { align-items: stretch; }
-      .code-input, .btn { width: 100%; }
-      .stock-code { font-size: 28px; }
-      .price { font-size: 32px; }
+    @media (max-width:640px){
+      .input,.select,.btn{ width:100%; }
+      .stock-code{ font-size:28px; }
+      .price{ font-size:40px; }
     }
   </style>
 </head>
 <body>
   <div class="topbar">
     <div class="topbar-inner">
-      <div class="logo">📊 我的台股看板</div>
-      <input id="stockInput" class="code-input" type="text" inputmode="numeric" placeholder="代號（例：2330）" maxlength="6" />
+      <div class="logo">📈 專業交易員台股看板</div>
+      <input id="stockInput" class="input" type="text" placeholder="輸入代號，例如 2330、00631L" />
       <button class="btn btn-primary" onclick="addStock()">+ 加入看板</button>
-      <button class="btn btn-secondary" onclick="refreshBoard()">重新整理</button>
-      <button class="btn btn-light" onclick="editWatchlist()">編輯自選股</button>
+      <button class="btn btn-dark" onclick="refreshBoard()">重新整理</button>
+      <button class="btn btn-ghost" onclick="editWatchlist()">編輯自選股</button>
+      <select id="sortSelect" class="select" onchange="renderBoard()">
+        <option value="custom">排序：自選順序</option>
+        <option value="pctDesc">排序：漲幅高→低</option>
+        <option value="pctAsc">排序：跌幅高→低</option>
+        <option value="volumeDesc">排序：成交量高→低</option>
+        <option value="codeAsc">排序：代號小→大</option>
+      </select>
     </div>
   </div>
 
   <div class="page">
-    <div class="summary-bar">
-      <div class="summary-chip">自選股數：<strong id="countText">0</strong></div>
-      <div class="summary-chip">最後更新：<strong id="lastUpdateText">尚未更新</strong></div>
-      <div class="summary-chip">資料狀態：<strong id="statusText">待載入</strong></div>
+    <div class="summary">
+      <div class="summary-card">
+        <div class="summary-title">自選數量</div>
+        <div class="summary-value" id="countText">0</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-title">最後更新</div>
+        <div class="summary-value" id="lastUpdateText">尚未更新</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-title">資料狀態</div>
+        <div class="summary-value" id="statusText">待載入</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-title">模式</div>
+        <div class="summary-value">近即時＋日資料回退</div>
+      </div>
     </div>
+
+    <div class="section-title">📊 指數區</div>
+    <div id="indices" class="indices"></div>
+
+    <div class="section-title">🎯 自選看板</div>
+    <div class="toolbar2">
+      <button class="chip active" data-filter="all" onclick="setFilter('all', this)">全部</button>
+      <button class="chip" data-filter="stock" onclick="setFilter('stock', this)">個股</button>
+      <button class="chip" data-filter="etf" onclick="setFilter('etf', this)">一般 ETF</button>
+      <button class="chip" data-filter="leveraged" onclick="setFilter('leveraged', this)">槓桿 ETF</button>
+      <button class="chip" data-filter="inverse" onclick="setFilter('inverse', this)">反向 ETF</button>
+    </div>
+
     <div id="board" class="board"></div>
   </div>
 
   <script>
-    const STORAGE_KEY = "tw_stock_watchlist_render_v1";
-    const DEFAULT_WATCHLIST = ["2330", "2454", "0050"];
+    const STORAGE_KEY = "pro_tw_board_watchlist_v1";
+    const DEFAULT_WATCHLIST = ["2330", "2454", "0050", "00631L"];
+    let currentFilter = "all";
+    let dashboardCache = { indices: [], stocks: [] };
 
     function getWatchlist() {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (!saved) {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(DEFAULT_WATCHLIST));
         return [...DEFAULT_WATCHLIST];
       }
       try {
-        const arr = JSON.parse(saved);
+        const arr = JSON.parse(raw);
         return Array.isArray(arr) ? arr : [...DEFAULT_WATCHLIST];
       } catch {
         return [...DEFAULT_WATCHLIST];
@@ -301,257 +401,284 @@
     }
 
     function setWatchlist(list) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify([...new Set(list)]));
       updateSummary();
     }
 
-    function updateSummary(status = null) {
-      const list = getWatchlist();
-      document.getElementById("countText").textContent = list.length;
+    function updateSummary(status) {
+      document.getElementById("countText").textContent = getWatchlist().length;
       if (status) document.getElementById("statusText").textContent = status;
+    }
+
+    function normalizeCode(code) {
+      return String(code || "").trim().toUpperCase();
     }
 
     function addStock() {
       const input = document.getElementById("stockInput");
-      const code = input.value.trim();
+      const code = normalizeCode(input.value);
 
-      if (!/^[0-9]{4,6}$/.test(code)) {
-        alert("請輸入正確的股票代號，例如 2330、0050");
+      if (!/^[0-9]{4,6}[A-Z]?$/.test(code)) {
+        alert("請輸入正確代號，例如 2330、0050、00631L");
         return;
       }
 
       const list = getWatchlist();
       if (list.includes(code)) {
-        alert("這檔股票已經在看板中");
+        alert("這檔已在看板中");
         return;
       }
 
       list.push(code);
       setWatchlist(list);
       input.value = "";
-      renderBoard();
+      refreshBoard();
     }
 
     function removeStock(code) {
-      const ok = confirm(`確定要刪除 ${code} 嗎？`);
-      if (!ok) return;
-      const list = getWatchlist().filter(item => item !== code);
+      if (!confirm(`確定刪除 ${code}？`)) return;
+      const list = getWatchlist().filter(x => x !== code);
       setWatchlist(list);
       renderBoard();
     }
 
     function editWatchlist() {
-      const current = getWatchlist().join(", ");
-      const result = prompt("請直接編輯自選股代號，用逗號分隔\n例如：2330, 2454, 0050", current);
+      const result = prompt(
+        "請輸入自選股代號，用逗號分隔\n例如：2330,2454,0050,00631L",
+        getWatchlist().join(", ")
+      );
       if (result === null) return;
 
       const list = result
         .split(",")
-        .map(v => v.trim())
-        .filter(v => /^[0-9]{4,6}$/.test(v));
+        .map(v => normalizeCode(v))
+        .filter(v => /^[0-9]{4,6}[A-Z]?$/.test(v));
 
-      setWatchlist([...new Set(list)]);
-      renderBoard();
+      setWatchlist(list);
+      refreshBoard();
     }
 
-    function showEmpty() {
-      document.getElementById("board").innerHTML = `
-        <div class="empty">
-          <h3 style="margin-top:0; color:#111827;">目前沒有自選股</h3>
-          <div>請在上方輸入股票代號後加入看板</div>
-          <div class="hint">例如：2330、2317、2454、0050</div>
-        </div>
-      `;
-      updateSummary("未設定");
+    function setFilter(type, btn) {
+      currentFilter = type;
+      document.querySelectorAll(".chip").forEach(el => el.classList.remove("active"));
+      btn.classList.add("active");
+      renderBoard();
     }
 
     function formatNumber(val) {
       if (val === null || val === undefined || val === "" || val === "-") return "--";
       const num = Number(String(val).replace(/,/g, ""));
-      if (Number.isNaN(num)) return val;
+      if (Number.isNaN(num)) return String(val);
       return num.toLocaleString("zh-TW");
     }
 
     function formatPrice(val) {
       if (val === null || val === undefined || val === "" || val === "-") return "--";
       const num = Number(String(val).replace(/,/g, ""));
-      if (Number.isNaN(num)) return val;
-      return num >= 1000 ? num.toFixed(0) : num.toFixed(2);
+      if (Number.isNaN(num)) return String(val);
+      if (num >= 1000) return num.toFixed(0);
+      if (num >= 100) return num.toFixed(2);
+      return num.toFixed(2);
     }
 
-    function calcChange(price, prevClose) {
-      const p = Number(String(price).replace(/,/g, ""));
-      const y = Number(String(prevClose).replace(/,/g, ""));
-      if (Number.isNaN(p) || Number.isNaN(y) || y === 0) {
-        return { diff: "--", pct: "--", cls: "flat" };
+    function toNum(val) {
+      const num = Number(String(val).replace(/,/g, ""));
+      return Number.isNaN(num) ? NaN : num;
+    }
+
+    function classifyInstrument(item) {
+      const code = String(item.code || "");
+      const name = String(item.name || "");
+
+      const isETF = /^00\d{3}[A-Z]?$/.test(code) || name.includes("ETF");
+      if (!isETF) return "stock";
+
+      if (name.includes("正2") || name.includes("槓桿") || /L$/.test(code)) return "leveraged";
+      if (name.includes("反1") || name.includes("反向") || /R$/.test(code)) return "inverse";
+      return "etf";
+    }
+
+    function getDisplayClass(diff) {
+      const n = toNum(diff);
+      if (Number.isNaN(n) || n === 0) return "flat";
+      return n > 0 ? "up" : "down";
+    }
+
+    function sortStocks(list) {
+      const mode = document.getElementById("sortSelect").value;
+      const arr = [...list];
+
+      if (mode === "pctDesc") {
+        arr.sort((a, b) => (toNum(b.pct) || -9999) - (toNum(a.pct) || -9999));
+      } else if (mode === "pctAsc") {
+        arr.sort((a, b) => (toNum(a.pct) || 9999) - (toNum(b.pct) || 9999));
+      } else if (mode === "volumeDesc") {
+        arr.sort((a, b) => (toNum(b.volume) || -1) - (toNum(a.volume) || -1));
+      } else if (mode === "codeAsc") {
+        arr.sort((a, b) => String(a.code).localeCompare(String(b.code), "zh-Hant"));
       }
-      const diff = p - y;
-      const pct = (diff / y) * 100;
-      return {
-        diff: (diff > 0 ? "+" : "") + diff.toFixed(2),
-        pct: (pct > 0 ? "+" : "") + pct.toFixed(2) + "%",
-        cls: diff > 0 ? "up" : diff < 0 ? "down" : "flat"
-      };
+      return arr;
     }
 
-    function renderCard(stock) {
-      return `
-        <div class="card">
-          <div class="card-head">
-            <div class="stock-main">
-              <div class="stock-code">${stock.code}</div>
-              <div class="stock-name">${stock.name}・${stock.market}</div>
-            </div>
-            <button class="remove-btn" onclick="removeStock('${stock.code}')">×</button>
-          </div>
+    function renderIndices() {
+      const el = document.getElementById("indices");
+      const list = dashboardCache.indices || [];
 
-          <div class="price-area">
-            <div class="price-row">
-              <div class="price ${stock.cls}">${formatPrice(stock.price)}</div>
-              <div class="chg-box">
-                <div class="chg ${stock.cls}">${stock.diff}</div>
-                <div class="chg-pct ${stock.cls}">${stock.pct}</div>
-              </div>
-            </div>
-
-            <div class="mini-grid">
-              <div class="mini-item">
-                <div class="mini-label">開盤</div>
-                <div class="mini-value">${formatPrice(stock.open)}</div>
-              </div>
-              <div class="mini-item">
-                <div class="mini-label">昨收</div>
-                <div class="mini-value">${formatPrice(stock.prevClose)}</div>
-              </div>
-              <div class="mini-item">
-                <div class="mini-label">最高</div>
-                <div class="mini-value">${formatPrice(stock.high)}</div>
-              </div>
-              <div class="mini-item">
-                <div class="mini-label">最低</div>
-                <div class="mini-value">${formatPrice(stock.low)}</div>
-              </div>
-              <div class="mini-item">
-                <div class="mini-label">成交量</div>
-                <div class="mini-value">${formatNumber(stock.volume)}</div>
-              </div>
-              <div class="mini-item">
-                <div class="mini-label">成交金額</div>
-                <div class="mini-value">${formatNumber(stock.amount)}</div>
-              </div>
-            </div>
-          </div>
-
-          <div class="card-foot">
-            <a class="detail-link" href="https://goodinfo.tw/tw/StockDetail.asp?STOCK_ID=${stock.code}" target="_blank">
-              查看詳細行情 →
-            </a>
-            <div class="update-time">${stock.updateText || "--"}</div>
-          </div>
-        </div>
-      `;
-    }
-
-    function renderLoadingCards(list) {
-      document.getElementById("board").innerHTML = list.map(code => `
-        <div class="card">
-          <div class="card-head">
-            <div class="stock-main">
-              <div class="stock-code">${code}</div>
-              <div class="stock-name">載入中...</div>
-            </div>
-            <button class="remove-btn" onclick="removeStock('${code}')">×</button>
-          </div>
-          <div class="price-area" style="display:flex;align-items:center;justify-content:center;min-height:170px;">
-            <div class="loading">正在抓取股價資訊...</div>
-          </div>
-          <div class="card-foot">
-            <span class="detail-link">請稍候</span>
-            <div class="update-time">--</div>
-          </div>
-        </div>
-      `).join("");
-    }
-
-    async function renderBoard() {
-      const list = getWatchlist();
       if (!list.length) {
-        showEmpty();
+        el.innerHTML = `<div class="empty">目前抓不到指數資料</div>`;
         return;
       }
 
-      renderLoadingCards(list);
-      updateSummary("更新中");
+      el.innerHTML = list.map(item => {
+        const cls = getDisplayClass(item.diff);
+        return `
+          <div class="index-card">
+            <div class="index-name">${item.name}</div>
+            <div class="index-value ${cls}">${formatPrice(item.price)}</div>
+            <div class="index-change ${cls}">
+              ${item.diff || "--"}　${item.pct || "--"}
+            </div>
+            <div class="muted" style="margin-top:10px;">${item.updateText || "--"}</div>
+          </div>
+        `;
+      }).join("");
+    }
 
-      try {
-        const res = await fetch("/api/stocks", { cache: "no-store" });
-        if (!res.ok) {
-          const msg = await res.text();
-          throw new Error(msg || "後端 API 載入失敗");
-        }
+    function renderBoard() {
+      updateSummary();
+      renderIndices();
 
-        const allStocks = await res.json();
+      const board = document.getElementById("board");
+      const watchlist = getWatchlist();
+      const stockMap = new Map((dashboardCache.stocks || []).map(x => [x.code, x]));
+      let list = watchlist.map(code => stockMap.get(code) || {
+        code,
+        name: "查無資料",
+        market: "--",
+        price: "--",
+        prevClose: "--",
+        open: "--",
+        high: "--",
+        low: "--",
+        volume: "--",
+        amount: "--",
+        diff: "--",
+        pct: "--",
+        updateText: "--",
+        type: "stock"
+      });
 
-        const html = list.map(code => {
-          const stock = allStocks.find(item => item.code === code);
-          if (!stock) {
-            return `
-              <div class="card">
-                <div class="card-head">
-                  <div class="stock-main">
-                    <div class="stock-code">${code}</div>
-                    <div class="stock-name">查無資料</div>
-                  </div>
-                  <button class="remove-btn" onclick="removeStock('${code}')">×</button>
-                </div>
-                <div class="price-area" style="display:flex;align-items:center;justify-content:center;min-height:170px;">
-                  <div class="error">此股票目前查無上市／上櫃資料</div>
-                </div>
-                <div class="card-foot">
-                  <a class="detail-link" href="https://goodinfo.tw/tw/StockDetail.asp?STOCK_ID=${code}" target="_blank">
-                    查看詳細行情 →
-                  </a>
-                  <div class="update-time">--</div>
+      list = list.map(item => ({ ...item, type: classifyInstrument(item) }));
+
+      if (currentFilter !== "all") {
+        list = list.filter(item => item.type === currentFilter);
+      }
+
+      list = sortStocks(list);
+
+      if (!list.length) {
+        board.innerHTML = `<div class="empty">這個分類目前沒有資料</div>`;
+        return;
+      }
+
+      board.innerHTML = list.map(item => {
+        const cls = getDisplayClass(item.diff);
+        const typeText = {
+          stock: "個股",
+          etf: "ETF",
+          leveraged: "槓桿 ETF",
+          inverse: "反向 ETF"
+        }[item.type] || "商品";
+
+        return `
+          <div class="card">
+            <div class="card-head">
+              <div>
+                <div class="stock-code">${item.code}</div>
+                <div class="stock-name">${item.name}・${item.market || "--"}</div>
+                <div class="badge-row">
+                  <span class="badge">${typeText}</span>
+                  <span class="badge">${item.quoteSource || "資料來源"}</span>
                 </div>
               </div>
-            `;
-          }
+              <button class="remove-btn" onclick="removeStock('${item.code}')">×</button>
+            </div>
 
-          const chg = calcChange(stock.price, stock.prevClose);
-          return renderCard({
-            ...stock,
-            diff: chg.diff,
-            pct: chg.pct,
-            cls: chg.cls
-          });
-        }).join("");
+            <div class="price-area">
+              <div class="price-row">
+                <div class="price ${cls}">${formatPrice(item.price)}</div>
+                <div class="change-box">
+                  <div class="chg ${cls}">${item.diff || "--"}</div>
+                  <div class="pct ${cls}">${item.pct || "--"}</div>
+                </div>
+              </div>
 
-        document.getElementById("board").innerHTML = html;
+              <div class="mini-grid">
+                <div class="mini"><div class="mini-label">開盤</div><div class="mini-value">${formatPrice(item.open)}</div></div>
+                <div class="mini"><div class="mini-label">昨收</div><div class="mini-value">${formatPrice(item.prevClose)}</div></div>
+                <div class="mini"><div class="mini-label">最高</div><div class="mini-value">${formatPrice(item.high)}</div></div>
+                <div class="mini"><div class="mini-label">最低</div><div class="mini-value">${formatPrice(item.low)}</div></div>
+                <div class="mini"><div class="mini-label">成交量</div><div class="mini-value">${formatNumber(item.volume)}</div></div>
+                <div class="mini"><div class="mini-label">成交金額</div><div class="mini-value">${formatNumber(item.amount)}</div></div>
+              </div>
+            </div>
+
+            <div class="card-foot">
+              <a class="link" href="https://goodinfo.tw/tw/StockDetail.asp?STOCK_ID=${item.code}" target="_blank">查看詳細行情 →</a>
+              <div class="muted">${item.updateText || "--"}</div>
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    async function refreshBoard() {
+      const watchlist = getWatchlist();
+      if (!watchlist.length) {
+        dashboardCache = { indices: [], stocks: [] };
+        renderBoard();
+        return;
+      }
+
+      updateSummary("更新中");
+      document.getElementById("board").innerHTML = watchlist.map(code => `
+        <div class="card">
+          <div class="card-head">
+            <div><div class="stock-code">${code}</div><div class="stock-name">載入中...</div></div>
+            <button class="remove-btn" onclick="removeStock('${code}')">×</button>
+          </div>
+          <div class="price-area" style="display:flex;align-items:center;justify-content:center;min-height:180px;">
+            <div class="muted">正在抓取即時資料...</div>
+          </div>
+        </div>
+      `).join("");
+
+      try {
+        const res = await fetch(`/api/dashboard?codes=${encodeURIComponent(watchlist.join(","))}`, { cache: "no-store" });
+        if (!res.ok) throw new Error(await res.text());
+        dashboardCache = await res.json();
         document.getElementById("lastUpdateText").textContent =
           new Date().toLocaleString("zh-TW", { hour12: false });
         updateSummary("已更新");
+        renderBoard();
       } catch (err) {
+        updateSummary("載入失敗");
         document.getElementById("board").innerHTML = `
           <div class="empty">
-            <h3 style="margin-top:0; color:#dc2626;">資料載入失敗</h3>
+            <div style="font-size:20px;font-weight:900;color:#fca5a5;margin-bottom:8px;">資料載入失敗</div>
             <div>${err.message}</div>
-            <div class="hint">請稍後再試，若剛部署完成，Render 首次啟動可能需要一點時間。</div>
           </div>
         `;
-        updateSummary("載入失敗");
       }
     }
 
-    function refreshBoard() {
-      renderBoard();
-    }
-
-    document.getElementById("stockInput").addEventListener("keydown", function(e) {
+    document.getElementById("stockInput").addEventListener("keydown", e => {
       if (e.key === "Enter") addStock();
     });
 
     updateSummary("待載入");
-    renderBoard();
+    refreshBoard();
+    setInterval(refreshBoard, 30000);
   </script>
 </body>
 </html>
