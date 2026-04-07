@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>我的台股看板</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Microsoft JhengHei", "PingFang TC", sans-serif;
+      background: #f3f5f7;
+      color: #1f2937;
+    }
+    .topbar {
+      background: #fff;
+      border-bottom: 1px solid #e5e7eb;
+      padding: 14px 18px;
+      position: sticky;
+      top: 0;
+      z-index: 20;
+    }
+    .topbar-inner {
+      max-width: 1280px;
+      margin: 0 auto;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .logo {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 700;
+      color: #2563eb;
+      background: #eff6ff;
+      border: 1px solid #dbeafe;
+      padding: 10px 14px;
+      border-radius: 12px;
+    }
+    .code-input {
+      height: 42px;
+      width: 180px;
+      padding: 0 14px;
+      border: 1px solid #d1d5db;
+      border-radius: 10px;
+      background: #ffffff;
+      font-size: 15px;
+      outline: none;
+    }
+    .code-input:focus {
+      border-color: #2563eb;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+    }
+    .btn {
+      height: 42px;
+      padding: 0 16px;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 700;
+      transition: .2s;
+    }
+    .btn-primary { background: #2563eb; color: #fff; }
+    .btn-primary:hover { background: #1d4ed8; }
+    .btn-secondary { background: #111827; color: #fff; }
+    .btn-secondary:hover { background: #000; }
+    .btn-light {
+      background: #f3f4f6;
+      color: #111827;
+      border: 1px solid #e5e7eb;
+    }
+    .btn-light:hover { background: #e5e7eb; }
+
+    .page {
+      max-width: 1280px;
+      margin: 20px auto;
+      padding: 0 16px 30px;
+    }
+    .summary-bar {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+    .summary-chip {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      padding: 10px 14px;
+      border-radius: 12px;
+      font-size: 14px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+    .board {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+      gap: 16px;
+    }
+    .card {
+      background: #fff;
+      border: 1px solid #dbeafe;
+      border-top: 4px solid #2563eb;
+      border-radius: 14px;
+      box-shadow: 0 4px 18px rgba(0,0,0,0.06);
+      overflow: hidden;
+      min-height: 330px;
+      display: flex;
+      flex-direction: column;
+    }
+    .card-head {
+      padding: 16px 16px 8px;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .stock-main { min-width: 0; }
+    .stock-code {
+      font-size: 30px;
+      font-weight: 800;
+      line-height: 1.1;
+      color: #111827;
+      letter-spacing: 0.5px;
+    }
+    .stock-name {
+      margin-top: 6px;
+      font-size: 14px;
+      color: #6b7280;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 210px;
+    }
+    .remove-btn {
+      border: none;
+      background: transparent;
+      color: #9ca3af;
+      cursor: pointer;
+      font-size: 22px;
+      line-height: 1;
+      padding: 0;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+    }
+    .remove-btn:hover {
+      background: #f3f4f6;
+      color: #ef4444;
+    }
+    .price-area {
+      margin: 0 16px 12px;
+      background: #f8fafc;
+      border: 1px solid #eef2f7;
+      border-radius: 12px;
+      padding: 14px;
+    }
+    .price-row {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .price {
+      font-size: 36px;
+      font-weight: 800;
+      line-height: 1;
+    }
+    .chg-box { text-align: right; }
+    .chg {
+      font-size: 18px;
+      font-weight: 800;
+    }
+    .chg-pct {
+      font-size: 14px;
+      margin-top: 4px;
+      font-weight: 700;
+    }
+    .up { color: #dc2626; }
+    .down { color: #16a34a; }
+    .flat { color: #6b7280; }
+
+    .mini-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-top: 8px;
+    }
+    .mini-item {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      padding: 10px;
+    }
+    .mini-label {
+      font-size: 12px;
+      color: #6b7280;
+      margin-bottom: 4px;
+    }
+    .mini-value {
+      font-size: 16px;
+      font-weight: 700;
+      color: #111827;
+    }
+
+    .card-foot {
+      margin-top: auto;
+      padding: 12px 16px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .detail-link {
+      color: #2563eb;
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 700;
+    }
+    .detail-link:hover { text-decoration: underline; }
+
+    .update-time {
+      color: #6b7280;
+      font-size: 12px;
+    }
+
+    .empty {
+      background: #fff;
+      border: 2px dashed #cbd5e1;
+      border-radius: 16px;
+      padding: 40px 20px;
+      text-align: center;
+      color: #6b7280;
+      grid-column: 1 / -1;
+    }
+
+    .loading {
+      color: #6b7280;
+      font-size: 14px;
+    }
+
+    .error {
+      color: #dc2626;
+      font-size: 14px;
+      font-weight: 700;
+      text-align: center;
+    }
+
+    .hint {
+      font-size: 13px;
+      color: #6b7280;
+      margin-top: 4px;
+    }
+
+    @media (max-width: 640px) {
+      .topbar-inner { align-items: stretch; }
+      .code-input, .btn { width: 100%; }
+      .stock-code { font-size: 28px; }
+      .price { font-size: 32px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="topbar-inner">
+      <div class="logo">📊 我的台股看板</div>
+      <input id="stockInput" class="code-input" type="text" inputmode="numeric" placeholder="代號（例：2330）" maxlength="6" />
+      <button class="btn btn-primary" onclick="addStock()">+ 加入看板</button>
+      <button class="btn btn-secondary" onclick="refreshBoard()">重新整理</button>
+      <button class="btn btn-light" onclick="editWatchlist()">編輯自選股</button>
+    </div>
+  </div>
+
+  <div class="page">
+    <div class="summary-bar">
+      <div class="summary-chip">自選股數：<strong id="countText">0</strong></div>
+      <div class="summary-chip">最後更新：<strong id="lastUpdateText">尚未更新</strong></div>
+      <div class="summary-chip">資料狀態：<strong id="statusText">待載入</strong></div>
+    </div>
+    <div id="board" class="board"></div>
+  </div>
+
+  <script>
+    const STORAGE_KEY = "tw_stock_watchlist_render_v1";
+    const DEFAULT_WATCHLIST = ["2330", "2454", "0050"];
+
+    function getWatchlist() {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (!saved) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(DEFAULT_WATCHLIST));
+        return [...DEFAULT_WATCHLIST];
+      }
+      try {
+        const arr = JSON.parse(saved);
+        return Array.isArray(arr) ? arr : [...DEFAULT_WATCHLIST];
+      } catch {
+        return [...DEFAULT_WATCHLIST];
+      }
+    }
+
+    function setWatchlist(list) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+      updateSummary();
+    }
+
+    function updateSummary(status = null) {
+      const list = getWatchlist();
+      document.getElementById("countText").textContent = list.length;
+      if (status) document.getElementById("statusText").textContent = status;
+    }
+
+    function addStock() {
+      const input = document.getElementById("stockInput");
+      const code = input.value.trim();
+
+      if (!/^[0-9]{4,6}$/.test(code)) {
+        alert("請輸入正確的股票代號，例如 2330、0050");
+        return;
+      }
+
+      const list = getWatchlist();
+      if (list.includes(code)) {
+        alert("這檔股票已經在看板中");
+        return;
+      }
+
+      list.push(code);
+      setWatchlist(list);
+      input.value = "";
+      renderBoard();
+    }
+
+    function removeStock(code) {
+      const ok = confirm(`確定要刪除 ${code} 嗎？`);
+      if (!ok) return;
+      const list = getWatchlist().filter(item => item !== code);
+      setWatchlist(list);
+      renderBoard();
+    }
+
+    function editWatchlist() {
+      const current = getWatchlist().join(", ");
+      const result = prompt("請直接編輯自選股代號，用逗號分隔\n例如：2330, 2454, 0050", current);
+      if (result === null) return;
+
+      const list = result
+        .split(",")
+        .map(v => v.trim())
+        .filter(v => /^[0-9]{4,6}$/.test(v));
+
+      setWatchlist([...new Set(list)]);
+      renderBoard();
+    }
+
+    function showEmpty() {
+      document.getElementById("board").innerHTML = `
+        <div class="empty">
+          <h3 style="margin-top:0; color:#111827;">目前沒有自選股</h3>
+          <div>請在上方輸入股票代號後加入看板</div>
+          <div class="hint">例如：2330、2317、2454、0050</div>
+        </div>
+      `;
+      updateSummary("未設定");
+    }
+
+    function formatNumber(val) {
+      if (val === null || val === undefined || val === "" || val === "-") return "--";
+      const num = Number(String(val).replace(/,/g, ""));
+      if (Number.isNaN(num)) return val;
+      return num.toLocaleString("zh-TW");
+    }
+
+    function formatPrice(val) {
+      if (val === null || val === undefined || val === "" || val === "-") return "--";
+      const num = Number(String(val).replace(/,/g, ""));
+      if (Number.isNaN(num)) return val;
+      return num >= 1000 ? num.toFixed(0) : num.toFixed(2);
+    }
+
+    function calcChange(price, prevClose) {
+      const p = Number(String(price).replace(/,/g, ""));
+      const y = Number(String(prevClose).replace(/,/g, ""));
+      if (Number.isNaN(p) || Number.isNaN(y) || y === 0) {
+        return { diff: "--", pct: "--", cls: "flat" };
+      }
+      const diff = p - y;
+      const pct = (diff / y) * 100;
+      return {
+        diff: (diff > 0 ? "+" : "") + diff.toFixed(2),
+        pct: (pct > 0 ? "+" : "") + pct.toFixed(2) + "%",
+        cls: diff > 0 ? "up" : diff < 0 ? "down" : "flat"
+      };
+    }
+
+    function renderCard(stock) {
+      return `
+        <div class="card">
+          <div class="card-head">
+            <div class="stock-main">
+              <div class="stock-code">${stock.code}</div>
+              <div class="stock-name">${stock.name}・${stock.market}</div>
+            </div>
+            <button class="remove-btn" onclick="removeStock('${stock.code}')">×</button>
+          </div>
+
+          <div class="price-area">
+            <div class="price-row">
+              <div class="price ${stock.cls}">${formatPrice(stock.price)}</div>
+              <div class="chg-box">
+                <div class="chg ${stock.cls}">${stock.diff}</div>
+                <div class="chg-pct ${stock.cls}">${stock.pct}</div>
+              </div>
+            </div>
+
+            <div class="mini-grid">
+              <div class="mini-item">
+                <div class="mini-label">開盤</div>
+                <div class="mini-value">${formatPrice(stock.open)}</div>
+              </div>
+              <div class="mini-item">
+                <div class="mini-label">昨收</div>
+                <div class="mini-value">${formatPrice(stock.prevClose)}</div>
+              </div>
+              <div class="mini-item">
+                <div class="mini-label">最高</div>
+                <div class="mini-value">${formatPrice(stock.high)}</div>
+              </div>
+              <div class="mini-item">
+                <div class="mini-label">最低</div>
+                <div class="mini-value">${formatPrice(stock.low)}</div>
+              </div>
+              <div class="mini-item">
+                <div class="mini-label">成交量</div>
+                <div class="mini-value">${formatNumber(stock.volume)}</div>
+              </div>
+              <div class="mini-item">
+                <div class="mini-label">成交金額</div>
+                <div class="mini-value">${formatNumber(stock.amount)}</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card-foot">
+            <a class="detail-link" href="https://goodinfo.tw/tw/StockDetail.asp?STOCK_ID=${stock.code}" target="_blank">
+              查看詳細行情 →
+            </a>
+            <div class="update-time">${stock.updateText || "--"}</div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderLoadingCards(list) {
+      document.getElementById("board").innerHTML = list.map(code => `
+        <div class="card">
+          <div class="card-head">
+            <div class="stock-main">
+              <div class="stock-code">${code}</div>
+              <div class="stock-name">載入中...</div>
+            </div>
+            <button class="remove-btn" onclick="removeStock('${code}')">×</button>
+          </div>
+          <div class="price-area" style="display:flex;align-items:center;justify-content:center;min-height:170px;">
+            <div class="loading">正在抓取股價資訊...</div>
+          </div>
+          <div class="card-foot">
+            <span class="detail-link">請稍候</span>
+            <div class="update-time">--</div>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    async function renderBoard() {
+      const list = getWatchlist();
+      if (!list.length) {
+        showEmpty();
+        return;
+      }
+
+      renderLoadingCards(list);
+      updateSummary("更新中");
+
+      try {
+        const res = await fetch("/api/stocks", { cache: "no-store" });
+        if (!res.ok) {
+          const msg = await res.text();
+          throw new Error(msg || "後端 API 載入失敗");
+        }
+
+        const allStocks = await res.json();
+
+        const html = list.map(code => {
+          const stock = allStocks.find(item => item.code === code);
+          if (!stock) {
+            return `
+              <div class="card">
+                <div class="card-head">
+                  <div class="stock-main">
+                    <div class="stock-code">${code}</div>
+                    <div class="stock-name">查無資料</div>
+                  </div>
+                  <button class="remove-btn" onclick="removeStock('${code}')">×</button>
+                </div>
+                <div class="price-area" style="display:flex;align-items:center;justify-content:center;min-height:170px;">
+                  <div class="error">此股票目前查無上市／上櫃資料</div>
+                </div>
+                <div class="card-foot">
+                  <a class="detail-link" href="https://goodinfo.tw/tw/StockDetail.asp?STOCK_ID=${code}" target="_blank">
+                    查看詳細行情 →
+                  </a>
+                  <div class="update-time">--</div>
+                </div>
+              </div>
+            `;
+          }
+
+          const chg = calcChange(stock.price, stock.prevClose);
+          return renderCard({
+            ...stock,
+            diff: chg.diff,
+            pct: chg.pct,
+            cls: chg.cls
+          });
+        }).join("");
+
+        document.getElementById("board").innerHTML = html;
+        document.getElementById("lastUpdateText").textContent =
+          new Date().toLocaleString("zh-TW", { hour12: false });
+        updateSummary("已更新");
+      } catch (err) {
+        document.getElementById("board").innerHTML = `
+          <div class="empty">
+            <h3 style="margin-top:0; color:#dc2626;">資料載入失敗</h3>
+            <div>${err.message}</div>
+            <div class="hint">請稍後再試，若剛部署完成，Render 首次啟動可能需要一點時間。</div>
+          </div>
+        `;
+        updateSummary("載入失敗");
+      }
+    }
+
+    function refreshBoard() {
+      renderBoard();
+    }
+
+    document.getElementById("stockInput").addEventListener("keydown", function(e) {
+      if (e.key === "Enter") addStock();
+    });
+
+    updateSummary("待載入");
+    renderBoard();
+  </script>
+</body>
+</html>
