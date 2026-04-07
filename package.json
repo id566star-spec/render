@@ -1,7 +1,7 @@
 {
-  "name": "pro-tw-trader-board",
+  "name": "pro-tw-full-market-board",
   "version": "1.0.0",
-  "description": "專業交易員台股看板",
+  "description": "專業交易員台股看板 - 全市場版",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
@@ -10,7 +10,9 @@
     "node": ">=18"
   },
   "dependencies": {
+    "cheerio": "^1.0.0",
     "cors": "^2.8.5",
-    "express": "^4.19.2"
+    "express": "^4.19.2",
+    "yahoo-finance2": "^2.13.3"
   }
 }
