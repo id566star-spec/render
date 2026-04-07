@@ -7,51 +7,169 @@ const PORT = process.env.PORT || 10000;
 app.use(cors());
 app.use(express.static(__dirname));
 
-function toNum(value) {
-  if (value === null || value === undefined) return NaN;
-  const n = Number(String(value).replace(/,/g, "").trim());
+function toNum(v) {
+  if (v === null || v === undefined || v === "" || v === "-") return NaN;
+  const n = Number(String(v).replace(/,/g, "").trim());
   return Number.isNaN(n) ? NaN : n;
 }
 
-function formatYYYYMMDD(date) {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, "0");
-  const d = String(date.getDate()).padStart(2, "0");
-  return `${y}${m}${d}`;
+function fmt2(v) {
+  const n = toNum(v);
+  if (Number.isNaN(n)) return "--";
+  return n > 0 ? `+${n.toFixed(2)}` : n.toFixed(2);
 }
 
-function formatROC(date) {
-  const y = date.getFullYear() - 1911;
-  const m = String(date.getMonth() + 1).padStart(2, "0");
-  const d = String(date.getDate()).padStart(2, "0");
-  return `${y}/${m}/${d}`;
-}
-
-function shiftDate(date, days) {
-  const d = new Date(date);
-  d.setDate(d.getDate() + days);
-  return d;
+function fmtPct(v) {
+  const n = toNum(v);
+  if (Number.isNaN(n)) return "--";
+  return n > 0 ? `+${n.toFixed(2)}%` : `${n.toFixed(2)}%`;
 }
 
 function calcChange(price, prevClose) {
   const p = toNum(price);
   const y = toNum(prevClose);
-
   if (Number.isNaN(p) || Number.isNaN(y) || y === 0) {
-    return {
-      diff: "--",
-      pct: "--",
-      cls: "flat"
-    };
+    return { diff: "--", pct: "--" };
+  }
+  const diff = p - y;
+  const pct = diff / y * 100;
+  return { diff: fmt2(diff), pct: fmtPct(pct) };
+}
+
+function normalizeCode(code) {
+  return String(code || "").trim().toUpperCase();
+}
+
+async function fetchJson(url) {
+  const res = await fetch(url, {
+    headers: { "User-Agent": "Mozilla/5.0" }
+  });
+  if (!res.ok) throw new Error(`請求失敗：${res.status}`);
+  return res.json();
+}
+
+async function fetchMisQuotes(codes) {
+  const channels = [];
+
+  for (const code of codes) {
+    channels.push(`tse_${code}.tw`);
+    channels.push(`otc_${code}.tw`);
   }
 
-  const diff = p - y;
-  const pct = (diff / y) * 100;
+  // 指數區
+  channels.push("tse_t00.tw");
+  channels.push("otc_o00.tw");
+
+  const url =
+    `https://mis.twse.com.tw/stock/api/getStockInfo.jsp?json=1&delay=0&ex_ch=${encodeURIComponent(channels.join("|"))}&_=${Date.now()}`;
+
+  const data = await fetchJson(url);
+  const arr = Array.isArray(data.msgArray) ? data.msgArray : [];
+
+  const stocks = [];
+  const indices = [];
+
+  for (const item of arr) {
+    const code = normalizeCode(item.c);
+    const latestPrice = item.z && item.z !== "-" ? item.z : (item.y || "--");
+    const prevClose = item.y || "--";
+    const chg = calcChange(latestPrice, prevClose);
+
+    const record = {
+      code,
+      name: item.n || code,
+      market: item.ex === "otc" ? "上櫃" : "上市",
+      price: latestPrice,
+      prevClose,
+      open: item.o || "--",
+      high: item.h || "--",
+      low: item.l || "--",
+      volume: item.ov || item.v || "--",
+      amount: "--",
+      diff: chg.diff,
+      pct: chg.pct,
+      updateText: `MIS ${item.d || ""} ${item.t || item.ot || ""}`.trim(),
+      quoteSource: "MIS 即時"
+    };
+
+    if (code === "T00" || code === "O00") {
+      indices.push({
+        code,
+        name: code === "T00" ? "加權指數" : "櫃買指數",
+        price: latestPrice,
+        diff: chg.diff,
+        pct: chg.pct,
+        updateText: `MIS ${item.d || ""} ${item.t || item.ot || ""}`.trim()
+      });
+    } else {
+      stocks.push(record);
+    }
+  }
+
+  return { stocks, indices };
+}
+
+async function fetchTwseDailyFallback() {
+  const url = "https://openapi.twse.com.tw/v1/exchangeReport/STOCK_DAY_ALL";
+  const data = await fetchJson(url);
+  return Array.isArray(data) ? data : [];
+}
+
+async function fetchTpexDailyFallback() {
+  const url = "https://www.tpex.org.tw/openapi/v1/tpex_mainboard_daily_close_quotes";
+  const data = await fetchJson(url);
+  return Array.isArray(data) ? data : [];
+}
+
+function mapTwseDaily(item) {
+  const code = normalizeCode(item.Code || item.證券代號);
+  if (!code) return null;
+
+  const price = item.ClosingPrice || item.收盤價 || "--";
+  const prevClose = item.OpeningPrice || item.開盤價 || "--";
+  const chg = calcChange(price, prevClose);
 
   return {
-    diff: (diff > 0 ? "+" : "") + diff.toFixed(2),
-    pct: (pct > 0 ? "+" : "") + pct.toFixed(2) + "%",
-    cls: diff > 0 ? "up" : diff < 0 ? "down" : "flat"
+    code,
+    name: item.Name || item.證券名稱 || code,
+    market: "上市",
+    price,
+    prevClose,
+    open: item.OpeningPrice || item.開盤價 || "--",
+    high: item.HighestPrice || item.最高價 || "--",
+    low: item.LowestPrice || item.最低價 || "--",
+    volume: item.TradeVolume || item.成交股數 || "--",
+    amount: item.TradeValue || item.成交金額 || "--",
+    diff: chg.diff,
+    pct: chg.pct,
+    updateText: "TWSE 日資料",
+    quoteSource: "TWSE 回退"
+  };
+}
+
+function mapTpexDaily(item) {
+  const code = normalizeCode(item.SecuritiesCompanyCode || item.代號);
+  if (!code) return null;
+
+  const price = item.Close || item.收盤 || "--";
+  const prevClose = item.PrevClose || item.前日收盤價 || price;
+  const chg = calcChange(price, prevClose);
+
+  return {
+    code,
+    name: item.CompanyName || item.名稱 || code,
+    market: "上櫃",
+    price,
+    prevClose,
+    open: item.Open || item.開盤 || "--",
+    high: item.High || item.最高 || "--",
+    low: item.Low || item.最低 || "--",
+    volume: item.Volume || item.成交股數 || "--",
+    amount: item.Amount || item.成交金額 || "--",
+    diff: chg.diff,
+    pct: chg.pct,
+    updateText: "TPEx 日資料",
+    quoteSource: "TPEx 回退"
   };
 }
 
@@ -59,190 +177,44 @@ app.get("/api/health", (req, res) => {
   res.json({ ok: true });
 });
 
-async function fetchTwseByDate(date) {
-  const dateStr = formatYYYYMMDD(date);
-  const url = `https://www.twse.com.tw/exchangeReport/MI_INDEX?response=json&date=${dateStr}&type=ALLBUT0999`;
-
-  const res = await fetch(url, {
-    headers: { "User-Agent": "Mozilla/5.0" }
-  });
-
-  if (!res.ok) {
-    throw new Error(`TWSE 請求失敗：${res.status}`);
-  }
-
-  const data = await res.json();
-
-  if (!data || !Array.isArray(data.tables)) {
-    return [];
-  }
-
-  // 找有個股清單的表
-  const targetTable = data.tables.find(
-    table =>
-      Array.isArray(table.fields) &&
-      Array.isArray(table.data) &&
-      table.fields.some(f => String(f).includes("證券代號")) &&
-      table.fields.some(f => String(f).includes("收盤價"))
-  );
-
-  if (!targetTable) return [];
-
-  const fields = targetTable.fields;
-  const rows = targetTable.data;
-
-  const idxCode = fields.findIndex(f => String(f).includes("證券代號"));
-  const idxName = fields.findIndex(f => String(f).includes("證券名稱"));
-  const idxVolume = fields.findIndex(f => String(f).includes("成交股數"));
-  const idxAmount = fields.findIndex(f => String(f).includes("成交金額"));
-  const idxOpen = fields.findIndex(f => String(f).includes("開盤價"));
-  const idxHigh = fields.findIndex(f => String(f).includes("最高價"));
-  const idxLow = fields.findIndex(f => String(f).includes("最低價"));
-  const idxClose = fields.findIndex(f => String(f).includes("收盤價"));
-  const idxChange = fields.findIndex(f => String(f).includes("漲跌價差"));
-
-  return rows
-    .filter(row => row && row[idxCode])
-    .map(row => {
-      const code = String(row[idxCode]).trim();
-      const name = idxName >= 0 ? String(row[idxName]).trim() : "上市股票";
-      const volume = idxVolume >= 0 ? row[idxVolume] : "--";
-      const amount = idxAmount >= 0 ? row[idxAmount] : "--";
-      const open = idxOpen >= 0 ? row[idxOpen] : "--";
-      const high = idxHigh >= 0 ? row[idxHigh] : "--";
-      const low = idxLow >= 0 ? row[idxLow] : "--";
-      const price = idxClose >= 0 ? row[idxClose] : "--";
-      const changeValueRaw = idxChange >= 0 ? row[idxChange] : "--";
-
-      return {
-        code,
-        name,
-        market: "上市",
-        volume,
-        amount,
-        open,
-        high,
-        low,
-        price,
-        changeValueRaw,
-        updateText: `TWSE ${dateStr}`
-      };
-    });
-}
-
-async function fetchTpexByDate(date) {
-  const rocDate = formatROC(date);
-  const url = `https://www.tpex.org.tw/openapi/v1/tpex_mainboard_daily_close_quotes?d=${encodeURIComponent(rocDate)}`;
-
-  const res = await fetch(url, {
-    headers: { "User-Agent": "Mozilla/5.0" }
-  });
-
-  if (!res.ok) {
-    throw new Error(`TPEx 請求失敗：${res.status}`);
-  }
-
-  const data = await res.json();
-  if (!Array.isArray(data)) return [];
-
-  return data
-    .filter(item => item["SecuritiesCompanyCode"] || item["代號"])
-    .map(item => {
-      const code = String(item["SecuritiesCompanyCode"] || item["代號"]).trim();
-      const name = item["CompanyName"] || item["名稱"] || "上櫃股票";
-      const volume = item["Volume"] || item["成交股數"] || "--";
-      const amount = item["Amount"] || item["成交金額"] || "--";
-      const open = item["Open"] || item["開盤"] || "--";
-      const high = item["High"] || item["最高"] || "--";
-      const low = item["Low"] || item["最低"] || "--";
-      const price = item["Close"] || item["收盤"] || "--";
-      const changeValueRaw = item["Change"] || item["漲跌"] || "--";
-
-      return {
-        code,
-        name,
-        market: "上櫃",
-        volume,
-        amount,
-        open,
-        high,
-        low,
-        price,
-        changeValueRaw,
-        updateText: `TPEx ${rocDate}`
-      };
-    });
-}
-
-async function fetchNearestTradingData(fetcher, maxBackDays = 7) {
-  const today = new Date();
-
-  for (let i = 0; i <= maxBackDays; i++) {
-    const d = shiftDate(today, -i);
-    try {
-      const list = await fetcher(d);
-      if (Array.isArray(list) && list.length > 0) {
-        return {
-          date: d,
-          list
-        };
-      }
-    } catch (err) {
-      // 繼續往前找最近交易日
-    }
-  }
-
-  return {
-    date: null,
-    list: []
-  };
-}
-
-app.get("/api/stocks", async (req, res) => {
+app.get("/api/dashboard", async (req, res) => {
   try {
-    const [twseTodayPack, tpexTodayPack, twsePrevPack, tpexPrevPack] = await Promise.all([
-      fetchNearestTradingData(fetchTwseByDate, 7),
-      fetchNearestTradingData(fetchTpexByDate, 7),
-      fetchNearestTradingData(date => fetchTwseByDate(shiftDate(date, -1)), 10),
-      fetchNearestTradingData(date => fetchTpexByDate(shiftDate(date, -1)), 10)
-    ]);
+    const codes = String(req.query.codes || "")
+      .split(",")
+      .map(normalizeCode)
+      .filter(Boolean)
+      .filter(v => /^[0-9]{4,6}[A-Z]?$/.test(v));
 
-    const twseToday = twseTodayPack.list;
-    const tpexToday = tpexTodayPack.list;
-    const twsePrev = twsePrevPack.list;
-    const tpexPrev = tpexPrevPack.list;
+    const mis = await fetchMisQuotes(codes);
+    const foundCodes = new Set(mis.stocks.map(x => x.code));
+    const missingCodes = codes.filter(code => !foundCodes.has(code));
 
-    const prevMap = new Map();
+    let fallbackStocks = [];
 
-    [...twsePrev, ...tpexPrev].forEach(item => {
-      prevMap.set(item.code, item.price);
+    if (missingCodes.length) {
+      const [twseDaily, tpexDaily] = await Promise.all([
+        fetchTwseDailyFallback(),
+        fetchTpexDailyFallback()
+      ]);
+
+      const dailyMap = new Map();
+
+      twseDaily.map(mapTwseDaily).filter(Boolean).forEach(item => dailyMap.set(item.code, item));
+      tpexDaily.map(mapTpexDaily).filter(Boolean).forEach(item => dailyMap.set(item.code, item));
+
+      fallbackStocks = missingCodes
+        .map(code => dailyMap.get(code))
+        .filter(Boolean);
+    }
+
+    const stocks = [...mis.stocks, ...fallbackStocks];
+
+    res.json({
+      indices: mis.indices,
+      stocks
     });
-
-    const merged = [...twseToday, ...tpexToday].map(item => {
-      const prevClose = prevMap.get(item.code) ?? "--";
-      const chg = calcChange(item.price, prevClose);
-
-      return {
-        code: item.code,
-        name: item.name,
-        market: item.market,
-        price: item.price,
-        prevClose,
-        open: item.open,
-        high: item.high,
-        low: item.low,
-        volume: item.volume,
-        amount: item.amount,
-        diff: chg.diff,
-        pct: chg.pct,
-        cls: chg.cls,
-        updateText: item.updateText
-      };
-    });
-
-    res.json(merged);
   } catch (error) {
-    console.error("api/stocks error:", error);
+    console.error("dashboard error:", error);
     res.status(500).send(error.message || "資料抓取失敗");
   }
 });
